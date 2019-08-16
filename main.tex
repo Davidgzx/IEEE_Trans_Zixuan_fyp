@@ -58,7 +58,11 @@
 \usepackage{float}
 %\usepackage{subcaption}
 \usepackage{algorithm}
+\usepackage{tikz}
 
+\usepackage{pgfplots}
+%\pgfplotsset{compat=newest}
+% \usepackage[UTF8]{ctex}
 % Some very useful LaTeX packages include:
 % (uncomment the ones you want to load)
 
@@ -432,7 +436,7 @@ GA, 30332 USA e-mail: (see http://www.michaelshell.org/contact.html).}% <-this %
 % As a general rule, do not put math, special symbols or citations
 % in the abstract or keywords.
 \begin{abstract}
-Pedestrian detection targets to classify and localize multiple people and return the spatial location of each person from images and videos.  Most of the detectors are not ideal for pedestrian detection in crowded scenes. Though Deep Neural Network has a remarkable performance on object detection, the majority of training datasets only label the uncovered parts of objects which makes occlusion detection unlearnable. Moreover, most monocular detectors do not take into account the multi-camera geometry to resolve ambiguities and ignore occlusions.  In this work, we present a model to apply multi-view detection based on monocular instance segmentation using CNNs and multi-view geometry to localize, which aims to detect people in crowded scenes. This report shows the usages of pedestrian detection, the challenge for detection, the proposed methodology, and its performance on terrace video sequences.
+Pedestrian detection targets to classify and localize multiple people and return the spatial location of each person from images and videos.  Though after 30 years of research, many works achieved remarkable results on object detection, most of detectors are not ideal for pedestrian detection in crowded scenes. One reason is that the majority of training datasets only label the uncovered parts of objects which make occluded features hard to be learned. Moreover, most monocular detectors do not take into consideration the multi-camera geometry to resolve ambiguities and ignore occlusions. In this work, we present a model to apply multi-view detection based on monocular instance segmentation using CNNs and multi-view geometry to localize, which is intended to detect people in crowded scenes. This report shows the usage of pedestrian detection, the challenge for detection, the proposed methodology, and its performance on the terrace video sequences.
 \end{abstract}
 
 % Note that keywords are not normally used for peerreview papers.
@@ -479,13 +483,13 @@ Vision-based pedestrian detection technology has been developed over decades, mo
 
 \subsubsection{Inconstant appearance}
 
-Pedestrians' appearance varies because of the change of height, pose, sex, cloth and accessory.
+Pedestrians’ appearance varies because of the change in height, pose, sex, clothing and accessory. 
 \subsubsection{Occlusion}
 
 Pedestrians are moving objects who may be occluded by other objects, especially the occlusion among pedestrians in crowded scenes.
 
 
-Detecting the pedestrians through multiple cameras within a overlapping field of view, allowing to merge more spatial information, is a reasonable solution for occlusion. This work use homography transformation to fuse information of potential location of pedestrians in a top view to indicate their positions in all camera views.
+Detecting pedestrians through multiple cameras within an overlapping field of view, allowing to merge more spatial information, is a reasonable solution for occlusion. This work use homography transformation to fuse information of potential location of pedestrians in a top view to indicate their positions in all camera views
 
 
 
@@ -598,7 +602,7 @@ Monocular detection works based on CNN, such as YOLO series and RCNN series have
 
 
 \section{Method for Merging Monocular Detector}
-The overview of our method is shown as\ref{fig:overview1}, it takes two inputs from a monocular detector: masks(foregrounds of pedestrians) and bounding boxes. The truncated mid-lines of bounding boxes are then projected to a top view, where the pedestrians' location candidates are defined. Next RSS (Repulsive Spatial Sparsity Filtering) find local peaks and reduces the duplicates .
+The overview of our method is shown as\ref{fig:overview1}, it takes two inputs from a monocular detector: masks(foregrounds of pedestrians) and bounding boxes. The truncated mid-lines of bounding boxes are then projected to a top view, where the pedestrians' location candidates are defined. Next RSS (Repulsive Spatial Sparsity Filtering) find local peaks and reduces the duplicates.
 
 
 \begin{figure}[H]
@@ -625,7 +629,7 @@ A scanner, the horizontal orange line with two gray ends, scans whether it is an
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=2.5in]{fig/extension2.eps}
+\includegraphics[width=2.54in]{fig/extension2.eps}
 \label{fig_first_case}
 
 \caption{The truncated mid-lines and masks} \label{fig_sim}
@@ -680,13 +684,13 @@ Third type it a set of points on a line who have no neighbors within a specific 
 
 \begin{figure} 
     \centering
-  \subfloat[a\label{1a}]{%
-       \includegraphics[width=0.3\linewidth]{fig/lines.eps}}s
+  \subfloat[\label{candi_a}]{%
+       \includegraphics[width=0.3\linewidth]{fig/lines.eps}}
     \hfill
-  \subfloat[b\label{1b}]{%
+  \subfloat[\label{candi_b}]{%
         \includegraphics[width=0.3\linewidth]{fig/candidate2.eps}}
     \hfill
-  \subfloat[c\label{1c}]{%
+  \subfloat[\label{candi_c}]{%
         \includegraphics[width=0.3\linewidth]{fig/candidate3.eps}}
   \caption{Three types of Candidates: (a) two lines' intersections. (b) points within parallel lines (c) points on non-intersected line}
   \label{candiates} 
@@ -694,17 +698,172 @@ Third type it a set of points on a line who have no neighbors within a specific 
 
 
 \subsection{Multi-view Mask Scoring}
-Occlusion can become a serious problem in complex scenarios with multiple  targets. The score generated by Mask RCNN aims to assess classification results, which is not well correlated with multi-view detection.
+Occlusion can become a serious problem in complex scenarios with multiple  targets. The score generated by Mask RCNN aims to assess classification results, which is not well correlated with multi-view detection and it can not be used for disambiguate ghost detection.
 
-A likelihood function is applying to candidates after inverse projecting them to camera views from the top view, and numbers of N (N stands for the number of camera views) corresponding bounding boxes are regenerated for each candidate. It is assumed the width of a bounding box is 37.5\% its height in this step.
+A likelihood function is applying to candidates after inverse projecting them to camera views and generating numbers of N (N stands for the number of camera views) corresponding bounding boxes based on their positions on the top view. It is assumed the width of a bounding box is 37.5\% its height in this step.
 
 The likelihood function is defined as 
 $$
     S_{\text {total}}=\sqrt[n]{\prod_{k=1}^{n}\left(S_{h e a d}[k]*S_{f o o t}[k]\right)}
 $$
-Where n stands for the number of cameras who detect a same pedestrian by a monocular detector. Monocular detectors sometimes fail to accurately locate the bounding boxes in images. Therefore, n is counted by the number of valid re-projected bounding boxes for a candidate in the top view. A valid bonding box should be in its corresponding camera's field of view.
+Where n stands for the number of cameras who detect a same pedestrian by a monocular detector. Since it is hard to know whether bounding boxes frames a same target across multiple views,so  that n is counted by the number of valid re-projected bounding boxes (A valid bonding box should be in its corresponding camera's field of view) for a candidate. 
+\subsubsection{S$_{\textbf{head}}$}
+$S_{head}$ aims to measure the horizontal deviation of a bounding box, whose range is from $0.2$ to $1.0$.
 
-\subsection{Soft Region Non Maximum suppression}
+\begin{equation*}
+    S_{h e a d}=\frac{\sum h i s t[i] \cdot y[i]+\sum \left | hist[i] \cdot y[i]\right|}{2 \sum \left | hist[i] \cdot y[i]\right|} 
+    \label{eq:Shead}
+\end{equation*}
+
+\subsubsection{$hist$}
+The masks are binary images whose values are either $1$ or $-1$ (if the original masks values are $1$ and $0$, change all $0$ to $-1$)
+
+$$
+    mask[i][j]=\left\{\begin{array}{l}{1}\rightarrow 1 \\ {0}\rightarrow -1\end{array}\right.
+$$
+
+\begin{figure}[htb]
+    \centering
+    \includegraphics[width=2.5in]{fig/800th_mask.png}
+    \caption{Masks: 800th frame of terrace dataset, view 1 to view 4}
+    \label{fig:800th_mask}
+\end{figure}
+
+Then count pixel values and add them vertically by every column in the bounding boxes generated from candidates, which are points in the top view. 
+
+$$
+hist=\left[\sum_{i=b}^{t}{mask}[i][0] \ldots \sum_{i=b}^{t}{mask}[i][col]\right]
+$$
+
+Where $b$ is the bottom raw of bounding box and $t$ is the top raw of it.
+
+\begin{figure}[htb]
+    \centering
+    \includegraphics[width=2.5in]{fig/800th_hist.png}
+    \caption{Histogram of mask column by column: A ideal bounding box should have positive values in the middle and negative on both sides}
+    \label{fig:800th_hist}
+\end{figure}
+
+The drawback of $S_{head}$ is that , when faced with occlusion problem, the bounding box often has higher response in the middle of two targets, because there are more foreground pixels, so that $hist$ has larger positive value, but . Therefore, $y[i]$ in \eqref{eq:Shead} should twist $hist$ values to correct this problem. An ideal bounding box is supposed to be located at the center of target and bound other targets as less as possible.
+
+% \begin{figure}[htb]
+%     \centering
+%     \scalebox{1.5}{%
+%     \centering
+%         \begin{tikzpicture}
+%             \centering
+%             \draw[->](-1.2,0)--(1.2,0)node[left,below,font=\tiny]{$x$};
+%             \draw[->](0,-0.8)--(0,1.2)node[right,above,font=\tiny]{$y$};
+%             % \foreach \x in {-0.5,0,0.5}{\draw(\x,0)--(\x,0.05)node[below,outer sep=2pt,font=\tiny]at(\x,0){\x};}
+%             \foreach \y in {1}{\draw(0,\y)--(0.05,\y)node[left,outer sep=-1pt,font=\tiny]at(0,\y){\y};}
+%             \draw[thick,smooth,domain=0:0.5]plot(\x,$sin(12.56*\x)/\x/12.56$);
+%             \draw[thick,smooth,domain=0:-0.5]plot(\x,1+3*\x);
+%             \draw(-1.3,-0.6)[color=gray,smooth]node[]{\tiny{$(-\frac{W}{2},-0.5)$}};
+%             \draw(1.3,-0.6)[color=gray,smooth]node[]{\tiny{$(\frac{W}{2},-0.5)$}};
+%             \draw[color=red, ->,dashed](-0.8,0.1) -- (-0.33,0);
+%             \draw[color=red, ->,dashed](0.8,0.1) -- (0.33,0);
+%             \draw[color=blue, ->,dashed](-0.6,-0.6) -- (-0.5,-0.5);
+%             \draw[color=blue, ->,dashed](0.6,-0.6) -- (0.5,-0.5);
+%             \draw(1.2,0.25)[color=gray,smooth]node[] {\tiny{$(\frac{1W}{3}, 0)$}};
+%             \draw(-1.2,0.25)[color=gray,smooth]node[] {\tiny{$(-\frac{1W}{3}, 0)$}};
+%             \draw[color=gray, dashed](-0.5,-0.8) -- (-0.5,1);
+%             \draw[color=gray, dashed](0.5,-0.8) -- (0.5,1);
+%             \draw[color=gray, dashed](-0.33,-0.8) -- (-0.33,1);
+%             % \draw(-0.44,1)[color=gray]node[above]{\tiny{$-\frac{2W}{3}$}};
+%             \draw[color=gray, dashed](0.33,-0.8) -- (0.3,1);
+%             \draw(0.5,-0.5)[fill, color=blue,smooth]circle(0.02);
+%             \draw(-0.5,-0.5)[fill, color=blue,smooth]circle(0.02);
+%             \draw(0.33,0)[color=red,fill,smooth]circle(0.02);
+%             \draw(-0.33,0)[color=red,fill,smooth]circle(0.02);
+%         \end{tikzpicture}}
+%     \caption{Mapping Filter Function $y=1-3 *|x|$}
+% \end{figure}
+\begin{figure}[htb]
+\centering
+\begin{tikzpicture}
+    \centering
+    \begin{axis}%
+    [
+    %  minor tick num=0.5,
+    %  grid style={line width=.1pt, draw=gray!10},
+    %  major grid style={line width=.2pt,draw=gray!50},
+    axis lines=middle,
+    ymin=-0.4,ymax=1.2,xmax=0.6,xmin=-0.6
+    %  enlargelimits={abs=0.2}
+    ]
+    \addplot[domain=-0.5:0.5,samples=50,smooth,red] {sin(deg(4*pi*x))/((4*pi*x))};    
+    
+    \draw(0.25,1)[color=gray,smooth]node[above] {{$(\frac{W}{4}, 0)$}};
+    \draw(-0.25,1)[color=gray,smooth]node[above] {{$(-\frac{W}{4}, 0)$}};
+    \draw[color=gray, dashed](-0.5,-0.8) -- (-0.5,1);
+    \draw[color=gray, dashed](0.5,-0.8) -- (0.5,1);
+    \draw[color=gray, dashed](-0.25,-0.8) -- (-0.25,1);
+    \draw(-0.5,1)[color=gray]node[above]{{$-\frac{W}{2}, 0)$}};
+    \draw(0.5,1)[color=gray]node[above]{{$-\frac{W}{2}, 0)$}};
+    \draw[color=gray, dashed](0.25,-0.8) -- (0.25,1);
+    \end{axis}
+
+\end{tikzpicture}
+\caption{Mapping Filter Function $y=\frac{sin(4\pi x)}{4\pi x}$}
+\end{figure}
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=2.5in]{fig/800th_filter.png}
+    \caption{Mapping functions $y[i]$ is shown in bounding boxes:}
+    \label{fig:800th_filter}
+\end{figure}
+
+\begin{figure}[htb]
+    \centering
+    \includegraphics[width=2.5in]{fig/800th_histMF.png}
+    \caption{$hist[i]*y[i]$: Because the three pedestrians are perfectly detected, values are nearly all positive}
+    \label{fig:800th_histMF}
+\end{figure}
+\subsection{Soft Region Non Maximum Suppression}
+NMS (Non Maximum Suppression) is widely used in object detection for clean up the predictions , but it is also one of reasons that cause difficulties in dense object detection. NMS pick out local maximum recursively and eliminate unnecessary predictions based on IOU of bounding boxes. It is a rash method that make wrong execution.
+
+To enhance the ability for detection in crowded scene, we proposed a non maximum suppression variant that not only use IOU but also take advantage of the geometric information. That is to say, the positions on the top view are helpful to improve NMS performance under occlusion between same class targets.
+\begin{algorithm}
+\caption{SRNMS}
+\label{alg:A}
+
+\begin{algorithmic}
+
+\STATE {\textbf{INPUT}}
+\STATE {$K$: radius}
+\STATE {$T$: nms thresh}
+\STATE {$C$: confidence thresh}
+\STATE {$Z$ = Candidates}
+\STATE {\textbf{OUTPUT}}
+
+\STATE {$R = \emptyset$ }
+
+%\Procedure{SRNMS}{$K$, $T$, $C$,$Z$}
+\STATE{}
+\WHILE{$Z \neq \emptyset$ }
+\STATE sort($Z$)
+\STATE $R \cup Z[0]$ and $Z - Z[0]$
+\FOR {$B$ in $Z$ whose dist($Z[0]$,item)$<K$}
+\FOR{$view$ in $views$}
+\STATE  $mIOU=max(IOU(B,Z[0],view))$
+\IF{$mIOU > T$}
+\STATE   $B_{score} = B_{score}*e^{-mIOU^2}/dist/K$
+\ENDIF
+\STATE $Z - Z[0]$
+\ENDFOR
+\ENDFOR
+\ENDWHILE
+\FOR{$candidate$ in $R$}
+    \IF{$candidate_{score} < C$}
+        \STATE  $R=R - candidate$
+    \ENDIF
+\ENDFOR
+\RETURN $R$
+%\EndProcedure
+\end{algorithmic}
+\end{algorithm}
 
 % if have a single appendix:
 %\appendix[Proof of the Zonklar Equations]
@@ -720,6 +879,7 @@ Where n stands for the number of cameras who detect a same pedestrian by a monoc
 % starts a section numbered zero.)
 %
 
+\section{Results}
 
 \appendices
 \section{Proof of the First Zonklar Equation}
